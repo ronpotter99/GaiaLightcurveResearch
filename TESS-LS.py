@@ -27,6 +27,7 @@ import astropy.visualization as stretching
 from lightkurve import search_targetpixelfile
 import astropy.units as u
 import sys
+import pathlib
 import TESSutils as tul
 
 ################################
@@ -159,12 +160,17 @@ obsTable = Observations.query_criteria(dataproduct_type="timeseries",
                                        project="TESS",
                                        target_name=TIC)
 
+# Create folder for results
+results_dir = './Results_%09d/'%(TIC)
+print(results_dir)
+pathlib.Path(results_dir).mkdir(exist_ok=True)
+
 # Download the 2-minute cadence light curves
 
 try:
     data = Observations.get_product_list(obsTable)
 except:
-    log = open('TIC%09d_NO_DATA.log'%(TIC), "w")
+    log = open(results_dir + 'TIC%09d_NO_DATA.log'%(TIC), "w")
     log.write("No data found for TIC %09d\n"%(TIC))
     log.close()
     sys.exit()
@@ -275,13 +281,13 @@ flux_or = slow_lc.flux
 slow_lc.clean_data()
 if (flag_lc == 1):
     ascii.write([slow_lc.bjd, slow_lc.flux, slow_lc.flux_err],
-                'TIC%09d_lc.dat'%(TIC), names=['BJD','RelativeFlux','Error'],
+                results_dir + 'TIC%09d_lc.dat'%(TIC), names=['BJD','RelativeFlux','Error'],
                 overwrite=True)
 
 # Calculates the periodogram
 slow_lc.periodogram()
 if (flag_ls == 1):
-    ascii.write([1/slow_lc.freq, slow_lc.power], 'TIC%09d_ls.dat'%(TIC),
+    ascii.write([1/slow_lc.freq, slow_lc.power], results_dir + 'TIC%09d_ls.dat'%(TIC),
                 names=['Period[h]','Power'], overwrite=True)
 
 # Folds the data to the dominant peak
@@ -301,10 +307,10 @@ amp2 = slow_lc.amp
 
 if (flag_ph == 1):
     if (flag_p2 == 1):
-        ascii.write([phase2, flux_phased2, flux_err_phased2], 'TIC%09d_phase.dat'%(TIC),
+        ascii.write([phase2, flux_phased2, flux_err_phased2], results_dir + 'TIC%09d_phase.dat'%(TIC),
                      names=['Phase','RelativeFlux','Error'], overwrite=True)
     else:
-        ascii.write([phase, flux_phased, flux_err_phased], 'TIC%09d_phase.dat'%(TIC),
+        ascii.write([phase, flux_phased, flux_err_phased], results_dir + 'TIC%09d_phase.dat'%(TIC),
                      names=['Phase','RelativeFlux','Error'], overwrite=True)
 
 plot = make_plot(slow_lc.freq, slow_lc.power, slow_lc.fap_001, BJD_or, flux_or,
@@ -312,7 +318,7 @@ plot = make_plot(slow_lc.freq, slow_lc.power, slow_lc.fap_001, BJD_or, flux_or,
                  phase2, flux_phased2, flux_fit2, slow_lc.period, slow_lc.crowdsap,
                  n_slow)
 
-plot.savefig('TIC%09d.png'%(TIC))
+plot.savefig(results_dir + 'TIC%09d.png'%(TIC))
 
 ################################
 
@@ -329,13 +335,13 @@ if fast:
     fast_lc.clean_data()
     if (flag_lc == 1):
         ascii.write([fast_lc.bjd, fast_lc.flux, fast_lc.flux_err],
-                    'TIC%09d_lc_fast.dat'%(TIC), names=['BJD','RelativeFlux','Error'],
+                    results_dir + 'TIC%09d_lc_fast.dat'%(TIC), names=['BJD','RelativeFlux','Error'],
                     overwrite=True)
 
     # Calculates the periodogram
     fast_lc.periodogram()
     if (flag_ls == 1):
-        ascii.write([1/fast_lc.freq, fast_lc.power], 'TIC%09d_ls_fast.dat'%(TIC),
+        ascii.write([1/fast_lc.freq, fast_lc.power], results_dir + 'TIC%09d_ls_fast.dat'%(TIC),
                     names=['Period[h]','Power'], overwrite=True)
 
     # Folds the data to the dominant peak
@@ -355,10 +361,10 @@ if fast:
 
     if (flag_ph == 1):
         if (flag_p2 == 1):
-            ascii.write([phase2, flux_phased2, flux_err_phased2], 'TIC%09d_phase_fast.dat'%(TIC),
+            ascii.write([phase2, flux_phased2, flux_err_phased2], results_dir + 'TIC%09d_phase_fast.dat'%(TIC),
                         names=['Phase','RelativeFlux','Error'], overwrite=True)
         else:
-            ascii.write([phase, flux_phased, flux_err_phased], 'TIC%09d_phase_fast.dat'%(TIC),
+            ascii.write([phase, flux_phased, flux_err_phased], results_dir + 'TIC%09d_phase_fast.dat'%(TIC),
                         names=['Phase','RelativeFlux','Error'], overwrite=True)
 
     plot_fast = make_plot(fast_lc.freq, fast_lc.power, fast_lc.fap_001, BJD_or, flux_or,
@@ -366,14 +372,14 @@ if fast:
                           phase2, flux_phased2, flux_fit2, fast_lc.period, fast_lc.crowdsap,
                           n_fast)
 
-    plot_fast.savefig('TIC%09d_fast.png'%(TIC))
+    plot_fast.savefig(results_dir + 'TIC%09d_fast.png'%(TIC))
 
 ################################
 
 
 #########  WRITE LOG  ##########
 
-log = open('TIC%09d.log'%(TIC), "w")
+log = open(results_dir + 'TIC%09d.log'%(TIC), "w")
 log.write("TIC %09d\n\n"%(TIC))
 if warning:
     log.write("Warning! No object with measured parallax within 30 arcsec.\n")
