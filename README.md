@@ -10,6 +10,7 @@ The output quick-look plot contains (i) an image of the TPF, with the Gaia sourc
 To run it, simply do 'python TESS-LS.py [TIC number]'\
 \
 Requires python >= 3.6\
+Requires gir1.2-gtk-4.0 or other required matplotlib backend installed\
 Other required packages can be installed with conda install -r requirements.txt (for conda users) or pip install -r requirements.txt\
 \
 This code was designed as a personal tool, therefore it has plenty of limitations. Improvements will be made eventually, suggestions are welcome.
