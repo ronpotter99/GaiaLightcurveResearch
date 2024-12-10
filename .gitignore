@@ -1,10 +1,12 @@
 mastDownload
 Results_*
 
+OutburstConfirmationTutorial-CloserLookAtLightcurves.ipynb
+
+.venv
+__pycache__
 bin
 include
 lib
 lib64
 share
-.venv
-__pycache__
