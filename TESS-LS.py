@@ -135,20 +135,34 @@ def make_plot(f, pow, fap, bjd0, flux0, bjd, flux, phi,
 #########  USER INPUT  #########
 
 # Define the object name using the TIC
+if not len(sys.argv) > 1:
+    print("No TIC value provided. Exiting.")
+    sys.exit()
 
 TIC = int(sys.argv[1])
 obj_name = "TIC " + str(TIC)
 
 # Output ascii light curve?
-flag_lc = int(input("Would you like an ascii file of the processed light curve?\n0 = no, 1 = yes: "))
+flag_lc = None
 # Output ascii periodogram?
-flag_ls = int(input("Would you like an ascii file of the Lomb-Scargle periodogram?\n0 = no, 1 = yes: "))
+flag_ls = None
 # Output ascii phase?
-flag_ph = int(input("Would you like an ascii file of the phased data?\n0 = no, 1 = yes: "))
+flag_ph = None
 # Is the period actually 2*P?
-flag_p2 = int(input("Would you like to multiply the period by two?\n"
+flag_p2 = None
+
+if len(sys.argv) > 2 and len(sys.argv[2]) == 4:
+    flag_lc = int(sys.argv[2][0])
+    flag_ls = int(sys.argv[2][1])
+    flag_ph = int(sys.argv[2][2])
+    flag_p2 = int(sys.argv[2][3])
+else:
+    flag_lc = int(input("Would you like an ascii file of the processed light curve?\n0 = no (default), 1 = yes: ") or "0")
+    flag_ls = int(input("Would you like an ascii file of the Lomb-Scargle periodogram?\n0 = no (default), 1 = yes: ") or "0")
+    flag_ph = int(input("Would you like an ascii file of the phased data?\n0 = no (default), 1 = yes: ") or "0")
+    flag_p2 = int(input("Would you like to multiply the period by two?\n"
                     "(useful for ellipsoidal variables and some eclipsing systems)\n"
-                    "0 = no, 1 = yes: "))
+                    "0 = no (default), 1 = yes: ") or "0")
 
 ################################
 
