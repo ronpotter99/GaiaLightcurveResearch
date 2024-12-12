@@ -43,6 +43,8 @@ def make_plot(f, pow, fap, bjd0, flux0, bjd, flux, phi,
 
     gridspec.GridSpec(6,10)
 
+
+    # TIC Pixel Count Graph
     plt.subplot2grid((6,10), (0,0), colspan=2, rowspan=2)
     plt.title('TIC %d'%(TIC))
     mean_tpf = np.mean(tpf.flux.value,axis=0)
@@ -62,6 +64,8 @@ def make_plot(f, pow, fap, bjd0, flux0, bjd, flux, phi,
     plt.ylabel('Pixel count')
     plt.xlabel('Pixel count')
 
+
+    # Gaia HR-diagram
     plt.subplot2grid((6,10), (0,2), colspan=2, rowspan=2)
     plt.scatter(s_bprp, s_MG, c='0.75', s=0.5, zorder=0)
     if (len(gaia)>1):
@@ -73,6 +77,8 @@ def make_plot(f, pow, fap, bjd0, flux0, bjd, flux, phi,
     plt.ylabel('$M_G$')
     plt.xlabel('$G_{BP}-G_{RP}$')
 
+
+    # Power and Period Graph
     plt.subplot2grid((6,10), (2,0), colspan=4, rowspan=2)
     plt.title("Period = %5.2f h"%period)
     plt.plot(1.0/f, pow, color ='k')
@@ -84,6 +90,8 @@ def make_plot(f, pow, fap, bjd0, flux0, bjd, flux, phi,
     plt.xlabel('P [h]')
     plt.ylabel('Power')
 
+
+    # BJD Graph
     plt.subplot2grid((6,10), (4,0), colspan=4, rowspan=2)
     plt.title('%s sector/s'% ns)
     plt.xlabel("BJD - 2457000")
@@ -92,6 +100,8 @@ def make_plot(f, pow, fap, bjd0, flux0, bjd, flux, phi,
     plt.scatter(bjd0, flux0, c='0.25', zorder=1, s = 0.5)
     plt.scatter(bjd, flux, c='k', zorder=1, s = 0.5)
 
+
+    # Phase to Dominant Peak Graph
     phi_avg = tul.avg_array(phi,50)
     fphi_avg = tul.avg_array(flux_phi,50)
 
@@ -109,6 +119,8 @@ def make_plot(f, pow, fap, bjd0, flux0, bjd, flux, phi,
     plt.plot(tul.running_mean(phi_avg,15)+1.0, tul.running_mean(fphi_avg,15),'.k', zorder=1)
     plt.plot(phi + 1.0, fit,'r--', lw = 3, zorder=2)
 
+
+    # Phase to Twice the Peak Graph
     phi_avg = tul.avg_array(phi2,50)
     fphi_avg = tul.avg_array(flux_phi2,50)
 
@@ -126,6 +138,39 @@ def make_plot(f, pow, fap, bjd0, flux0, bjd, flux, phi,
     plt.plot(tul.running_mean(phi_avg,15)+1.0, tul.running_mean(fphi_avg,15),'.k', zorder=1)
     plt.plot(phi2 + 1.0, fit2, 'r--', lw = 3, zorder=2)
 
+
+    plt.tight_layout()
+
+    return fig
+
+######################################
+
+###  FUNCTION FOR EXPANDED GRAPH  ####
+
+# size 1 = 2
+# size 2 = 4
+# size 3 = 6
+# size 4 = 8
+# size 5 = 16
+# size 6 = 32
+
+def make_expanded_graph(bjd_original, flux_original, bjd_clean, flux_clean, ns, figsize=(48,30), point_size=32, font_size=32):
+
+    fig = plt.figure(figsize=figsize)
+
+    plt.rcParams.update({'font.size': font_size})
+
+    gridspec.GridSpec(1,1)
+
+    plt.subplot2grid((1,1), (0,0))
+    plt.title('%s sector/s'% ns)
+    plt.xlabel("BJD - 2457000")
+    plt.ylabel('Relative flux')
+    plt.xlim(np.min(bjd_clean), np.max(bjd_clean))
+    # Plot the original values in light grey
+    plt.scatter(bjd_original, flux_original, c='0.25', zorder=1, s = point_size)
+    # Plot the cleaned values in black over original values
+    plt.scatter(bjd_clean, flux_clean, c='k', zorder=1, s = point_size)
     plt.tight_layout()
 
     return fig
@@ -331,8 +376,19 @@ plot = make_plot(slow_lc.freq, slow_lc.power, slow_lc.fap_001, BJD_or, flux_or,
                  slow_lc.bjd, slow_lc.flux, phase, flux_phased, flux_fit,
                  phase2, flux_phased2, flux_fit2, slow_lc.period, slow_lc.crowdsap,
                  n_slow)
-
 plot.savefig(results_dir + 'TIC%09d.png'%(TIC))
+
+# Make a bigger version of the fast BJD graph
+fast_full_graph = make_expanded_graph(BJD_or, flux_or, slow_lc.bjd, slow_lc.flux, n_fast)
+fast_full_graph.savefig(results_dir + 'TIC%09d_full.png'%(TIC))
+
+# Make an expanded version of the fast BJD graph
+fast_expanded_graph = make_expanded_graph(BJD_or, flux_or, slow_lc.bjd, slow_lc.flux, n_fast, (120,30))
+fast_expanded_graph.savefig(results_dir + 'TIC%09d_expanded.png'%(TIC))
+
+# Make an expanded detailed version of the fast BJD graph
+fast_expanded_detailed_graph = make_expanded_graph(BJD_or, flux_or, slow_lc.bjd, slow_lc.flux, n_fast, (120,30), 2)
+fast_expanded_detailed_graph.savefig(results_dir + 'TIC%09d_expanded_detailed.png'%(TIC))
 
 ################################
 
@@ -387,6 +443,18 @@ if fast:
                           n_fast)
 
     plot_fast.savefig(results_dir + 'TIC%09d_fast.png'%(TIC))
+
+    # Make a bigger version of the fast BJD graph
+    fast_full_graph = make_expanded_graph(BJD_or, flux_or, fast_lc.bjd, fast_lc.flux, n_fast)
+    fast_full_graph.savefig(results_dir + 'TIC%09d_fast_full.png'%(TIC))
+
+    # Make an expanded version of the fast BJD graph
+    fast_expanded_graph = make_expanded_graph(BJD_or, flux_or, fast_lc.bjd, fast_lc.flux, n_fast, (120,30))
+    fast_expanded_graph.savefig(results_dir + 'TIC%09d_fast_expanded.png'%(TIC))
+
+    # Make an expanded detailed version of the fast BJD graph
+    fast_expanded_detailed_graph = make_expanded_graph(BJD_or, flux_or, fast_lc.bjd, fast_lc.flux, n_fast, (120,30), 2)
+    fast_expanded_detailed_graph.savefig(results_dir + 'TIC%09d_fast_expanded_detailed.png'%(TIC))
 
 ################################
 
