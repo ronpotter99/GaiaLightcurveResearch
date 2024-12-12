@@ -30,6 +30,8 @@ class LCdata:
     def read_data(self, list):
         crowdsap = []
 
+        print("Reading data for %d sectors"%(len(list)))
+        
         # Open data for the first sector
         with fits.open(list[0]) as TESSdata:
             data=TESSdata[1].data
@@ -64,6 +66,8 @@ class LCdata:
 
     def clean_data(self):
 
+        print("Cleaning data")
+
         # removing nan values
         index = ~(np.isnan(self.bjd) | np.isnan(self.flux))
 
@@ -85,6 +89,9 @@ class LCdata:
         self.flux = self.flux/np.mean(self.flux)
         
     def periodogram(self):
+
+        print("Calculating power diagram over frequency period")
+
         dt = [ self.t[i+1] - self.t[i-1] for i in range(1,len(self.t)-1)]
         fmax = 1.0/np.median(dt)
         fmin = 2.0/(max(self.t))

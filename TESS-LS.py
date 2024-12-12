@@ -221,7 +221,7 @@ obsTable = Observations.query_criteria(dataproduct_type="timeseries",
 
 # Create folder for results
 results_dir = './Results_%09d/'%(TIC)
-print(results_dir)
+print("Creating Results folder:", results_dir)
 pathlib.Path(results_dir).mkdir(exist_ok=True)
 
 # Download the 2-minute cadence light curves
@@ -255,6 +255,7 @@ else:
     fast = True
 
 # Dowload target pixel file for plotting
+print("Downloading pixel file for pixel count graph")
 tpf = search_targetpixelfile("TIC "+str(TIC), mission='TESS').download()
 
 ################################
@@ -262,6 +263,7 @@ tpf = search_targetpixelfile("TIC "+str(TIC), mission='TESS').download()
 #########  GAIA MATCH  #########
 
 # First do a large search using 6 pixels
+print("Calculating Gaia HR diagram")
 
 coord = SkyCoord(ra=obsTable[0]['s_ra'], dec=obsTable[0]['s_dec'],
                  unit=(u.degree, u.degree), frame='icrs')
@@ -331,6 +333,8 @@ s_bprp = table.array['bp_rp']
 
 #######  2-MINUTE DATA  ########
 
+print("Processing 2-minute exposure data points")
+
 slow_lc = tul.LCdata(TIC)
 
 slow_lc.read_data(infile)
@@ -348,6 +352,9 @@ slow_lc.periodogram()
 if (flag_ls == 1):
     ascii.write([1/slow_lc.freq, slow_lc.power], results_dir + 'TIC%09d_ls.dat'%(TIC),
                 names=['Period[h]','Power'], overwrite=True)
+
+
+print("Calculating phase to dominant peak diagrams")
 
 # Folds the data to the dominant peak
 slow_lc.phase_data(1.0)
@@ -372,6 +379,10 @@ if (flag_ph == 1):
         ascii.write([phase, flux_phased, flux_err_phased], results_dir + 'TIC%09d_phase.dat'%(TIC),
                      names=['Phase','RelativeFlux','Error'], overwrite=True)
 
+
+print("Creating 2-minute exposure graphical images")
+
+# Make general information graph
 plot = make_plot(slow_lc.freq, slow_lc.power, slow_lc.fap_001, BJD_or, flux_or,
                  slow_lc.bjd, slow_lc.flux, phase, flux_phased, flux_fit,
                  phase2, flux_phased2, flux_fit2, slow_lc.period, slow_lc.crowdsap,
@@ -395,6 +406,7 @@ fast_expanded_detailed_graph.savefig(results_dir + 'TIC%09d_expanded_detailed.pn
 ######  20-SECOND DATA  ########
 
 if fast:
+    print("Processing 20-second exposure data points")
 
     fast_lc = tul.LCdata(TIC)
 
@@ -413,6 +425,9 @@ if fast:
     if (flag_ls == 1):
         ascii.write([1/fast_lc.freq, fast_lc.power], results_dir + 'TIC%09d_ls_fast.dat'%(TIC),
                     names=['Period[h]','Power'], overwrite=True)
+
+
+    print("Calculating phase to dominant peak diagrams")
 
     # Folds the data to the dominant peak
     fast_lc.phase_data(1.0)
@@ -437,11 +452,14 @@ if fast:
             ascii.write([phase, flux_phased, flux_err_phased], results_dir + 'TIC%09d_phase_fast.dat'%(TIC),
                         names=['Phase','RelativeFlux','Error'], overwrite=True)
 
+
+    print("Creating 20-second exposure graphical images")
+
+    # Make general information graph
     plot_fast = make_plot(fast_lc.freq, fast_lc.power, fast_lc.fap_001, BJD_or, flux_or,
                           fast_lc.bjd, fast_lc.flux, phase, flux_phased, flux_fit,
                           phase2, flux_phased2, flux_fit2, fast_lc.period, fast_lc.crowdsap,
                           n_fast)
-
     plot_fast.savefig(results_dir + 'TIC%09d_fast.png'%(TIC))
 
     # Make a bigger version of the fast BJD graph
@@ -460,6 +478,8 @@ if fast:
 
 
 #########  WRITE LOG  ##########
+
+print("Finalizing logs for TIC %09d"%(TIC))
 
 log = open(results_dir + 'TIC%09d.log'%(TIC), "w")
 log.write("TIC %09d\n\n"%(TIC))
