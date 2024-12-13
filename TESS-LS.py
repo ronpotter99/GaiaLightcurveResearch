@@ -281,7 +281,6 @@ for arg in sys.argv:
         for flag in arg:
 
             # TODO add -i to determine a file input of TIC numbers (each TIC number on a separate row)
-            # TODO add error handling of TIC numbers to create an error.log file that states no data for TIC number found
 
             # Check for 'q' flag to determine if user questions should be shown
             # No flag means default answers are used
@@ -390,7 +389,7 @@ for TIC in TIC_list:
         log = open(results_dir + "TIC%09d_NO_DATA.log" % (TIC), "w")
         log.write("No data found for TIC %09d\n" % (TIC))
         log.close()
-        sys.exit()
+        continue
 
     download_lc = Observations.download_products(data, productSubGroupDescription="LC")
     infile = download_lc[0][:]
