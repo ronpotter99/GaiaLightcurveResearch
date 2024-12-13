@@ -218,6 +218,7 @@ def make_expanded_graph(
 #########  USER INPUT  #########
 
 TIC_list = []
+file_input_flag = False
 create_detailed_graphs = False
 show_questions_flag = False
 question_input_flag = False
@@ -225,6 +226,17 @@ question_answers = None
 
 # Process script arguments
 for arg in sys.argv:
+
+    # Check if argument is supposed to be an input file path
+    if file_input_flag:
+
+        # Read the input file
+        with open(arg, "r") as file:
+            for line in file:
+                if line and line.strip().isdigit():
+                    TIC_list.append(int(line.strip()))
+
+        file_input_flag = False
 
     # Check if argument is supposed to be question inputs
     if question_input_flag:
@@ -255,6 +267,13 @@ for arg in sys.argv:
             --help
               Provides this help manual.
 
+            -i
+              The next argument will be the path of an input file. The input
+              file should contain TIC numbers with each TIC number on a separate
+              line. The easiest file format to use is '.txt'.
+              Example:
+              python3 TESS-LS.py [TIC #]... -i example_input.txt
+
             -q
               This flag provides questions for the user that can be used to
               gain additional information about the graphs or can modify some
@@ -280,7 +299,10 @@ for arg in sys.argv:
     elif len(arg) > 0 and arg[0] == "-":
         for flag in arg:
 
-            # TODO add -i to determine a file input of TIC numbers (each TIC number on a separate row)
+            # Check for 'i' flag to determine if next arg in list is an input file path
+            # TIC numbers in the input file should be one TIC number per row
+            if flag == "i":
+                file_input_flag = True
 
             # Check for 'q' flag to determine if user questions should be shown
             # No flag means default answers are used
@@ -618,6 +640,9 @@ for TIC in TIC_list:
             results_dir + "TIC%09d_extremely_expanded_detailed.png" % (TIC)
         )
 
+    # Close generated graphs after they are saved so they do not stay open in memory
+    plt.close('all')
+
     ################################
 
     ######  20-SECOND DATA  ########
@@ -734,6 +759,9 @@ for TIC in TIC_list:
             fast_expanded_detailed_graph.savefig(
                 results_dir + "TIC%09d_fast_extremely_expanded_detailed.png" % (TIC)
             )
+
+        # Close generated graphs after they are saved so they do not stay open in memory
+        plt.close('all')
 
     ################################
 
