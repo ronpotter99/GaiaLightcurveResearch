@@ -12,6 +12,15 @@
             "program": "${file}",
             "console": "integratedTerminal",
             "args": ["123456789"]
+        },
+        {
+            "name": "TESS-LS.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "TESS-LS.py",
+            "console": "integratedTerminal",
+            "python": ".venv/bin/python3",
+            "args": ["-d", "8988748"]
         }
     ]
 }
