@@ -147,14 +147,16 @@ def make_plot(f, pow, fap, bjd0, flux0, bjd, flux, phi,
 
 ###  FUNCTION FOR EXPANDED GRAPH  ####
 
-# size 1 = 2
-# size 2 = 4
-# size 3 = 6
-# size 4 = 8
-# size 5 = 16
-# size 6 = 32
+# To change default size of graph data points, change the
+# 'point_size' value in the line below. Suggested values are:
+# point_size=16 (default)
+# point_size=32
+# point_size=48
 
-def make_expanded_graph(bjd_original, flux_original, bjd_clean, flux_clean, ns, figsize=(48,30), point_size=32, font_size=32):
+def make_expanded_graph(
+        bjd_original, flux_original, bjd_clean, flux_clean, ns, 
+        figsize=(48,30), point_size=16, font_size=32
+        ):
 
     fig = plt.figure(figsize=figsize)
 
@@ -177,7 +179,8 @@ def make_expanded_graph(bjd_original, flux_original, bjd_clean, flux_clean, ns, 
 #########  USER INPUT  #########
 
 TIC_list = []
-create_expanded_graphs = False
+create_detailed_graphs = False
+show_questions_flag = False
 question_input_flag = False
 question_answers = None
 
@@ -212,14 +215,22 @@ for arg in sys.argv:
             --help
               Provides this help manual.
 
+            -q
+              This flag provides questions for the user that can be used to
+              gain additional information about the graphs or can modify some
+              of the graph calculations. If this is used with the 'a' flag,
+              the questions will not be displayed and the 'a' flag answers
+              will be used instead.
+
             -a
-              The next argument will be the values for question answers.
+              The next argument will be the values for user question answers.
+              These questions are the same ones that show using the 'q' flag.
               There must be the same number of characters as there are questions.
               Example:
               python3 TESS-LS.py [TIC #]... -a 0000
 
-            -e
-              Create expanded versions of the graphs. These are good for zooming in
+            -d
+              Create detailed versions of the graphs. These are good for zooming in
               to get better resolution views of the data in case it is not clear if
               an outburst is spotted.
 """)
@@ -228,13 +239,22 @@ for arg in sys.argv:
     elif len(arg) > 0 and arg[0] == "-":
         for flag in arg:
 
+            # TODO add -i to determine a file input of TIC numbers (each TIC number on a separate row)
+            # TODO add error handling of TIC numbers to create an error.log file that states no data for TIC number found
+
+            # Check for 'q' flag to determine if user questions should be shown
+            # No flag means default answers are used
+            # If used with the 'a' flag, that takes precedence
+            if flag == "q":
+                show_questions_flag = True
+
             # Check for 'a' flag to determine if next arg in list is question answers string
             if flag == "a":
                 question_input_flag = True
 
-            # Check for 'e' flag to determine if expanded graphs should be created
-            if flag == "e":
-                create_expanded_graphs = True
+            # Check for 'd' flag to determine if detailed graphs should be created
+            if flag == "d":
+                create_detailed_graphs = True
 
     # Check if argument is a number
     elif arg.isdigit():
@@ -246,13 +266,13 @@ if len(TIC_list) < 1:
     sys.exit()
 
 # Output ascii light curve?
-flag_lc = None
+flag_lc = 0
 # Output ascii periodogram?
-flag_ls = None
+flag_ls = 0
 # Output ascii phase?
-flag_ph = None
+flag_ph = 0
 # Is the period actually 2*P?
-flag_p2 = None
+flag_p2 = 0
 
 if question_answers:
     if len(question_answers) == 4:
@@ -264,7 +284,7 @@ if question_answers:
         print("There are 4 questions. If providing scripted answers, please answer all questions.")
         print("'%s' does not correctly answer the questions."%(question_answers))
         sys.exit()
-else:
+elif show_questions_flag:
     flag_lc = int(input("Would you like an ascii file of the processed light curve?\n0 = no (default), 1 = yes: ") or "0")
     flag_ls = int(input("Would you like an ascii file of the Lomb-Scargle periodogram?\n0 = no (default), 1 = yes: ") or "0")
     flag_ph = int(input("Would you like an ascii file of the phased data?\n0 = no (default), 1 = yes: ") or "0")
@@ -465,11 +485,11 @@ for TIC in TIC_list:
     fast_full_graph = make_expanded_graph(BJD_or, flux_or, slow_lc.bjd, slow_lc.flux, n_fast)
     fast_full_graph.savefig(results_dir + 'TIC%09d_full.png'%(TIC))
 
-    if create_expanded_graphs:
-        # Make an expanded version of the fast BJD graph
-        fast_expanded_graph = make_expanded_graph(BJD_or, flux_or, slow_lc.bjd, slow_lc.flux, n_fast, (120,30))
-        fast_expanded_graph.savefig(results_dir + 'TIC%09d_expanded.png'%(TIC))
+    # Make an expanded version of the fast BJD graph
+    fast_expanded_graph = make_expanded_graph(BJD_or, flux_or, slow_lc.bjd, slow_lc.flux, n_fast, (120,30))
+    fast_expanded_graph.savefig(results_dir + 'TIC%09d_expanded.png'%(TIC))
 
+    if create_detailed_graphs:
         # Make an expanded and detailed version of the fast BJD graph
         fast_expanded_detailed_graph = make_expanded_graph(BJD_or, flux_or, slow_lc.bjd, slow_lc.flux, n_fast, (120,30), 2)
         fast_expanded_detailed_graph.savefig(results_dir + 'TIC%09d_expanded_detailed.png'%(TIC))
@@ -543,11 +563,11 @@ for TIC in TIC_list:
         fast_full_graph = make_expanded_graph(BJD_or, flux_or, fast_lc.bjd, fast_lc.flux, n_fast)
         fast_full_graph.savefig(results_dir + 'TIC%09d_fast_full.png'%(TIC))
 
-        if create_expanded_graphs:
-            # Make an expanded version of the fast BJD graph
-            fast_expanded_graph = make_expanded_graph(BJD_or, flux_or, fast_lc.bjd, fast_lc.flux, n_fast, (120,30))
-            fast_expanded_graph.savefig(results_dir + 'TIC%09d_fast_expanded.png'%(TIC))
+        # Make an expanded version of the fast BJD graph
+        fast_expanded_graph = make_expanded_graph(BJD_or, flux_or, fast_lc.bjd, fast_lc.flux, n_fast, (120,30))
+        fast_expanded_graph.savefig(results_dir + 'TIC%09d_fast_expanded.png'%(TIC))
 
+        if create_detailed_graphs:
             # Make an expanded and detailed version of the fast BJD graph
             fast_expanded_detailed_graph = make_expanded_graph(BJD_or, flux_or, fast_lc.bjd, fast_lc.flux, n_fast, (120,30), 2)
             fast_expanded_detailed_graph.savefig(results_dir + 'TIC%09d_fast_expanded_detailed.png'%(TIC))
