@@ -20,7 +20,7 @@
             "program": "TESS-LS.py",
             "console": "integratedTerminal",
             "python": ".venv/bin/python3",
-            "args": ["8988748", "-d"]
+            "args": ["8988748", "-g"]
         }
     ]
 }

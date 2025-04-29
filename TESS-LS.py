@@ -209,16 +209,17 @@ def gen_power_and_period_graph(
         power_and_period_graph: Axes,
         lcData: tul.LCdata,
 ):
-    # Calculates the periodogram
-    lcData.periodogram()
-    if flag_ls == 1:
-        print("logging periodogram data")
-        ascii.write(
-            [1 / lcData.freq, lcData.power],
-            logs_dir + "TIC%09d_%d_ls.dat" % (TIC, lcData.exposure_time),
-            names=["Period[h]", "Power"],
-            overwrite=True,
-        )
+    if not lcData.period:
+        # Calculates the periodogram
+        lcData.periodogram()
+        if flag_ls == 1:
+            print("logging periodogram data")
+            ascii.write(
+                [1 / lcData.freq, lcData.power],
+                logs_dir + "TIC%09d_%d_ls.dat" % (TIC, lcData.exposure_time),
+                names=["Period[h]", "Power"],
+                overwrite=True,
+            )
 
     # Power and Period Graph
     print("Generating Power and Period Graph")
@@ -266,6 +267,7 @@ def gen_bjd_graph(
 
 # Function that does the following:
 # Takes a graph axes
+# Calculates periodogram if not already calculated
 # Phases data using phase_factor
 # Plots phased data on the axes
 # Returns newly created graph axes
@@ -276,6 +278,18 @@ def gen_phase_to_dominant_peak_graph(
     phase_factor,
     title = "Phased to dominant peak",
 ):
+    if not lc_data.period:
+        # Calculates the periodogram
+        lc_data.periodogram()
+        if flag_ls == 1:
+            print("logging periodogram data")
+            ascii.write(
+                [1 / lc_data.freq, lc_data.power],
+                logs_dir + "TIC%09d_%d_ls.dat" % (TIC, lc_data.exposure_time),
+                names=["Period[h]", "Power"],
+                overwrite=True,
+            )
+
     # Generating Phase to Dominant Peak graph
     print("Generating Phase to Dominant Peak graph with phase factor %d" %(phase_factor))
 
@@ -440,6 +454,27 @@ def make_full_page_bjd_plot(
     return fig
 
 
+# This function makes a split pixel count HR diagram graph
+def make_full_page_location_plot(
+    lc_data: tul.LCdata,
+    log_file: TextIOWrapper,
+    figsize=(48, 30),
+    font_size=32,
+):
+    fig = plt.figure(figsize=figsize, layout="tight")
+    subplots = fig.subplots(ncols=2)
+    plt.rcParams.update({"font.size": font_size})
+
+    gen_pixel_count_graph_and_gaia_hr_diagram(
+        subplots[0],
+        subplots[1],
+        log_file,
+        lc_data.crowdsap,
+    )
+
+    return fig
+
+
 ################################
 #########  USER INPUT  #########
 ######  START OF SCRIPT  #######
@@ -449,7 +484,7 @@ def make_full_page_bjd_plot(
 TIC_list = []
 file_input_flag = False
 create_detailed_graphs = False
-create_only_full_graphs = False
+skip_general_information_plot = False
 show_questions_flag = False
 question_input_flag = False
 question_answers = None
@@ -523,11 +558,11 @@ for arg in sys.argv:
               to get better resolution views of the data in case it is not clear if
               an outburst is spotted.
 
-            -f
-              Create only full-size BJD graphs, and skip creating the general information
-              plot. This makes the script run much faster, however since some of the 
-              information normally required in creating the general information plot 
-              are not calculated, the logs will be sparser when running with this option.
+            -g
+              Skip creating the general information plot. This makes the script run 
+              much faster, however since some of the information normally required 
+              in creating the general information plot is not calculated, the logs 
+              will be sparser when running with this option.
 """
         )
 
@@ -554,9 +589,9 @@ for arg in sys.argv:
             if flag == "d":
                 create_detailed_graphs = True
 
-            # Check for 'd' flag to determine if detailed graphs should be created
-            if flag == "f":
-                create_only_full_graphs = True
+            # Check for 'g' flag to determine if general information plot should be skipped
+            if flag == "g":
+                skip_general_information_plot = True
 
     # Check if argument is a number
     elif arg.isdigit():
@@ -707,7 +742,7 @@ for TIC in TIC_list:
     slow_log.write("Number of sectors: %2d\n" % (sector_count_slow))
     slow_log.write("CROWDSAP: %5.3f\n" % (np.mean(slow_lc.crowdsap)))
 
-    if not create_only_full_graphs:
+    if not skip_general_information_plot:
         # Make general information graph
         plot = make_general_information_plot(
             slow_lc,
@@ -717,6 +752,17 @@ for TIC in TIC_list:
             sector_count_slow,
         )
         plot.savefig(results_dir + "TIC%09d.png" % (TIC))
+    else:
+        # Make a graph of the pixel count and HR diagram if the 
+        # general information plot isn't generated. This helps
+        # verify the white dwarf and any additional surrounding stars.
+        # Since this doesn't change from fast to slow data, it doesn't
+        # need to be generated for the fast data as well.
+        location_graph = make_full_page_location_plot(
+            slow_lc,
+            slow_log,
+        )
+        location_graph.savefig(results_dir + "TIC%09d_pixel_count_graph_and_hr_diagram.png" % (TIC))
 
     # Make a bigger version of the slow BJD graph
     slow_full_graph = make_full_page_bjd_plot(
@@ -788,7 +834,7 @@ for TIC in TIC_list:
         fast_log.write("Number of sectors: %2d\n" % (sector_count_fast))
         fast_log.write("CROWDSAP: %5.3f\n" % (np.mean(fast_lc.crowdsap)))
 
-        if not create_only_full_graphs:
+        if not skip_general_information_plot:
             # Make general information graph
             plot_fast = make_general_information_plot(
                 fast_lc,
