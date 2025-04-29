@@ -454,11 +454,11 @@ def make_full_page_bjd_plot(
     return fig
 
 
-# This function makes a split pixel count HR diagram graph
+# This function makes a split pixel count and HR diagram graph
 def make_full_page_location_plot(
     lc_data: tul.LCdata,
     log_file: TextIOWrapper,
-    figsize=(48, 30),
+    figsize=(32, 20),
     font_size=32,
 ):
     fig = plt.figure(figsize=figsize, layout="tight")
@@ -744,52 +744,52 @@ for TIC in TIC_list:
 
     if not skip_general_information_plot:
         # Make general information graph
-        plot = make_general_information_plot(
+        general_information_plot = make_general_information_plot(
             slow_lc,
             slow_log,
             BJD_or,
             flux_or,
             sector_count_slow,
         )
-        plot.savefig(results_dir + "TIC%09d.png" % (TIC))
+        general_information_plot.savefig(results_dir + "TIC%09d.png" % (TIC))
     else:
         # Make a graph of the pixel count and HR diagram if the 
         # general information plot isn't generated. This helps
         # verify the white dwarf and any additional surrounding stars.
         # Since this doesn't change from fast to slow data, it doesn't
         # need to be generated for the fast data as well.
-        location_graph = make_full_page_location_plot(
+        location_plot = make_full_page_location_plot(
             slow_lc,
             slow_log,
         )
-        location_graph.savefig(results_dir + "TIC%09d_pixel_count_graph_and_hr_diagram.png" % (TIC))
+        location_plot.savefig(results_dir + "TIC%09d_pixel_count_graph_and_hr_diagram.png" % (TIC))
 
     # Make a bigger version of the slow BJD graph
-    slow_full_graph = make_full_page_bjd_plot(
+    slow_full_plot = make_full_page_bjd_plot(
         slow_lc, BJD_or, flux_or, sector_count_slow
     )
-    slow_full_graph.savefig(results_dir + "TIC%09d_full.png" % (TIC))
+    slow_full_plot.savefig(results_dir + "TIC%09d_full.png" % (TIC))
 
     # Make an expanded version of the slow BJD graph
-    slow_expanded_graph = make_full_page_bjd_plot(
+    slow_expanded_plot = make_full_page_bjd_plot(
         slow_lc, BJD_or, flux_or, sector_count_slow, (120, 30)
     )
-    slow_expanded_graph.savefig(results_dir + "TIC%09d_expanded.png" % (TIC))
+    slow_expanded_plot.savefig(results_dir + "TIC%09d_expanded.png" % (TIC))
 
     if create_detailed_graphs:
         # Make an expanded and detailed version of the slow BJD graph
-        slow_expanded_detailed_graph = make_full_page_bjd_plot(
+        slow_expanded_detailed_plot = make_full_page_bjd_plot(
             slow_lc, BJD_or, flux_or, sector_count_slow, (120, 30), 2
         )
-        slow_expanded_detailed_graph.savefig(
+        slow_expanded_detailed_plot.savefig(
             results_dir + "TIC%09d_expanded_detailed.png" % (TIC)
         )
 
         # Make an extremely expanded and detailed version of the slow BJD graph
-        slow_expanded_detailed_graph = make_full_page_bjd_plot(
+        slow_expanded_detailed_plot = make_full_page_bjd_plot(
             slow_lc, BJD_or, flux_or, sector_count_slow, (240, 30), 2
         )
-        slow_expanded_detailed_graph.savefig(
+        slow_expanded_detailed_plot.savefig(
             results_dir + "TIC%09d_extremely_expanded_detailed.png" % (TIC)
         )
 
@@ -836,41 +836,41 @@ for TIC in TIC_list:
 
         if not skip_general_information_plot:
             # Make general information graph
-            plot_fast = make_general_information_plot(
+            general_information_plot_fast = make_general_information_plot(
                 fast_lc,
                 fast_log,
                 BJD_or,
                 flux_or,
                 sector_count_fast,
             )
-            plot_fast.savefig(results_dir + "TIC%09d_fast.png" % (TIC))
+            general_information_plot_fast.savefig(results_dir + "TIC%09d_fast.png" % (TIC))
 
         # Make a bigger version of the fast BJD graph
-        fast_full_graph = make_full_page_bjd_plot(
+        fast_full_plot = make_full_page_bjd_plot(
             fast_lc, BJD_or, flux_or, sector_count_fast
         )
-        fast_full_graph.savefig(results_dir + "TIC%09d_fast_full.png" % (TIC))
+        fast_full_plot.savefig(results_dir + "TIC%09d_fast_full.png" % (TIC))
 
         # Make an expanded version of the fast BJD graph
-        fast_expanded_graph = make_full_page_bjd_plot(
+        fast_expanded_plot = make_full_page_bjd_plot(
             fast_lc, BJD_or, flux_or, sector_count_fast, (120, 30)
         )
-        fast_expanded_graph.savefig(results_dir + "TIC%09d_fast_expanded.png" % (TIC))
+        fast_expanded_plot.savefig(results_dir + "TIC%09d_fast_expanded.png" % (TIC))
 
         if create_detailed_graphs:
             # Make an expanded and detailed version of the fast BJD graph
-            fast_expanded_detailed_graph = make_full_page_bjd_plot(
+            fast_expanded_detailed_plot = make_full_page_bjd_plot(
                 fast_lc, BJD_or, flux_or, sector_count_fast, (120, 30), 2
             )
-            fast_expanded_detailed_graph.savefig(
+            fast_expanded_detailed_plot.savefig(
                 results_dir + "TIC%09d_fast_expanded_detailed.png" % (TIC)
             )
 
             # Make an extremely expanded and detailed version of the fast BJD graph
-            fast_expanded_detailed_graph = make_full_page_bjd_plot(
+            fast_expanded_detailed_plot = make_full_page_bjd_plot(
                 fast_lc, BJD_or, flux_or, sector_count_fast, (240, 30), 2
             )
-            fast_expanded_detailed_graph.savefig(
+            fast_expanded_detailed_plot.savefig(
                 results_dir + "TIC%09d_fast_extremely_expanded_detailed.png" % (TIC)
             )
 
