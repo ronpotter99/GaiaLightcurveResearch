@@ -1,0 +1,15 @@
+11 TIC values, gen all graphs, log all calculated data
+~33-35 min.
+~3:00-3:15 min. per TIC value
+
+11 TIC values, gen all graphs
+~25.5 min.
+~2:20 min. per TIC value
+
+11 TIC values, gen only full BJD and detailed BJD graphs
+~5.75 min.
+~31 seconds per TIC value
+
+11 TIC values, gen only full BJD graphs
+~4.25 min.
+~23 seconds per TIC value

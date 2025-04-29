@@ -6,8 +6,10 @@ from astropy.stats import sigma_clip
 
 class LCdata:
 
-    def __init__(self, tic):
+    def __init__(self, tic, exposure_time):
         self.tic = tic
+        # exposure_time in seconds
+        self.exposure_time = exposure_time
 
         self.bjd = []
         self.t = []
