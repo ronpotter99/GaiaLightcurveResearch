@@ -6,9 +6,10 @@
 # folded light to both the period and twice the period (useful for binary
 # systems where the dominant peak is often an alias).
 
-__version__ = "2.0"
-__author__ = "Ingrid Pelisoli"
-# Expanded functionality provided by Thomas Stackhouse
+__version__ = "2.1"
+__author__ = "Ingrid Pelisoli and Thomas Stackhouse"
+# Initial functionality provided by Ingrid Pelisoli
+# Expanded functionality and refactor provided by Thomas Stackhouse
 
 #####  IMPORTING PACKAGES  ######
 
