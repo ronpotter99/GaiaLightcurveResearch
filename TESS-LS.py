@@ -2,11 +2,11 @@
 # It will combine data for all existing sectors and perform a period search
 # using a Lomb-Scargle periodogram.
 # It all searches for the object in Gaia DR2.
-# The output is a plot showing the periodogram, the Gaia CMD, and the phase-
-# folded light to both the period and twice the period (useful for binary
-# systems where the dominant peak is often an alias).
+# The output is a plot showing the Gaia CMD, the periodogram, 
+# the phase-folded light to the period, the lightcurve, and 
+# the binned lightcurve.
 
-__version__ = "3.0"
+__version__ = "3.1"
 __author__ = "Ingrid Pelisoli and Thomas Stackhouse"
 # Initial functionality provided by Ingrid Pelisoli
 # Expanded functionality and refactor provided by Thomas Stackhouse
@@ -18,6 +18,7 @@ from matplotlib.axes import Axes
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+import lightkurve as lk
 from astropy.io import ascii
 from astropy.io import fits
 from astropy.io.votable import parse_single_table
@@ -28,7 +29,6 @@ from astropy.coordinates import SkyCoord, Distance, Angle
 from astropy.time import Time
 from astropy.visualization.mpl_normalize import ImageNormalize
 import astropy.visualization as stretching
-from lightkurve import search_targetpixelfile
 import astropy.units as u
 import sys
 import pathlib
@@ -55,7 +55,7 @@ def gen_pixel_count_graph_and_gaia_hr_diagram(
     crowd,
 ):
     print("Downloading pixel file for pixel count graph")
-    tpf = search_targetpixelfile("TIC " + str(TIC), mission="TESS").download()
+    tpf = lk.search_targetpixelfile("TIC " + str(TIC), mission="TESS").download()
     
     # First do a large search using 6 pixels
     print("Calculating Gaia coordinates")
@@ -241,8 +241,8 @@ def gen_power_and_period_graph(
 # Takes a graph axes
 # Plots bjd and flux information on the axes
 # Returns newly created graph axes
-def gen_bjd_graph(
-    bjd_graph: Axes,
+def gen_lightcurve_graph(
+    lightcurve_graph: Axes,
     bjd_original,
     flux_original,
     bjd_clean,
@@ -250,19 +250,19 @@ def gen_bjd_graph(
     sector_count,
     point_size=16,
 ):
-    # Generating BJD graph
-    print("Generating BJD graph")
+    # Generating lightcurve graph
+    print("Generating lightcurve graph")
 
-    bjd_graph.set_title("%s sector/s" %(sector_count))
-    bjd_graph.set_xlabel("BJD - 2457000")
-    bjd_graph.set_ylabel("Relative flux")
-    bjd_graph.set_xlim(np.min(bjd_clean), np.max(bjd_clean))
+    lightcurve_graph.set_title("%s sector/s" %(sector_count))
+    lightcurve_graph.set_xlabel("BJD - 2457000")
+    lightcurve_graph.set_ylabel("Relative flux")
+    lightcurve_graph.set_xlim(np.min(bjd_clean), np.max(bjd_clean))
     # Plot the original values in light grey
-    bjd_graph.scatter(bjd_original, flux_original, c="0.25", zorder=1, s=point_size)
+    lightcurve_graph.scatter(bjd_original, flux_original, c="0.25", zorder=1, s=point_size)
     # Plot the cleaned values in black over original values
-    bjd_graph.scatter(bjd_clean, flux_clean, c="k", zorder=1, s=point_size)
+    lightcurve_graph.scatter(bjd_clean, flux_clean, c="k", zorder=1, s=point_size)
 
-    return bjd_graph
+    return lightcurve_graph
 
 
 # Function that does the following:
@@ -342,6 +342,39 @@ def gen_phase_to_dominant_peak_graph(
     return phase_to_dominant_peak_graph
 
 
+# Function that does the following:
+# Takes a graph axes
+# Bins lightcurve information based on a bin size
+# Plots lightcurve and flux information on the axes
+# Returns newly created graph axes
+def gen_binned_lightcurve_graph(
+    binned_graph: Axes,
+    lc_data: tul.LCdata,
+    sector_count,
+    time_bin_size=0.021,
+    point_size=16,
+):
+    # Binning cleaned lightcurve
+    print("Binning lightcurve")
+
+    # Create LightCurve objects and bin
+    lightcurve_clean = lk.LightCurve(time=lc_data.bjd, flux=lc_data.flux, flux_err=lc_data.flux_err)
+    binned_lightcurve_clean = lightcurve_clean.bin(time_bin_size)
+
+
+    # Generating lightcurve graph
+    print("Generating binned lightcurve graph")
+
+    binned_graph.set_title("%d sector/s binned with time_bin_size %f" %(sector_count, time_bin_size))
+    binned_graph.set_xlabel("BJD - 2457000")
+    binned_graph.set_ylabel("Relative flux")
+    binned_graph.set_xlim(np.min(binned_lightcurve_clean.time.value), np.max(binned_lightcurve_clean.time.value))
+    # Plot the cleaned values in black
+    binned_graph.scatter(binned_lightcurve_clean.time.value, binned_lightcurve_clean.flux.value, c="k", zorder=1, s=point_size)
+
+    return binned_graph
+
+
 ################################################
 ###  FUNCTIONS FOR CREATING PAGES OF GRAPHS  ###
 ################################################
@@ -353,7 +386,7 @@ def make_general_information_plot(
     log_file: TextIOWrapper,
     bjd_original,
     flux_original,
-    n_slow,
+    sector_count,
 ):
     plt.rcParams.update({"font.size": 22})
     fig = plt.figure(figsize=(24, 15), layout="tight")
@@ -361,9 +394,9 @@ def make_general_information_plot(
     # A = Pixel count
     # B = Gaia HR diagram
     # C = Power/Period graph
-    # D = flux/BJD graph
-    # E = Phased to dominant peak
-    # F = Phased to twice the peak
+    # D = Phased to dominant peak
+    # E = Lightcurve graph
+    # F = Binned lightcurve graph
     subplotDict = fig.subplot_mosaic(
         """
         ABEEE
@@ -392,20 +425,8 @@ def make_general_information_plot(
         lc_data,
     )
 
-    # Generate BJD Graph
-    bjd_graph = subplotDict.get('D')
-    gen_bjd_graph(
-        bjd_graph,
-        bjd_original,
-        flux_original,
-        lc_data.bjd,
-        lc_data.flux,
-        n_slow,
-        point_size=0.5,
-    )
-
     # Generate Phase to Dominant Peak Graph
-    phase_to_dominant_peak_graph = subplotDict.get('E')
+    phase_to_dominant_peak_graph = subplotDict.get('D')
     gen_phase_to_dominant_peak_graph(
         phase_to_dominant_peak_graph,
         lc_data,
@@ -413,27 +434,38 @@ def make_general_information_plot(
         1.0,
     )
 
-    # Generate Phase to Twice Dominant Peak Graph
-    phase_to_twice_dominant_peak_graph = subplotDict.get('F')
-    gen_phase_to_dominant_peak_graph(
-        phase_to_twice_dominant_peak_graph,
+    # Generate Lightcurve Graph
+    lightcurve_graph = subplotDict.get('E')
+    gen_lightcurve_graph(
+        lightcurve_graph,
+        bjd_original,
+        flux_original,
+        lc_data.bjd,
+        lc_data.flux,
+        sector_count,
+        point_size=0.5,
+    )
+
+    # Generate Binned Lightcurve Graph
+    binned_graph = subplotDict.get('F')
+    gen_binned_lightcurve_graph(
+        binned_graph,
         lc_data,
-        log_file,
-        2.0,
-        title = "Phased to twice the peak",
+        sector_count,
+        point_size=0.5,
     )
 
     return fig
 
 
-# This function makes a full-page BJD graph
-def make_full_page_bjd_plot(
+# This function makes a full-page lightcurve graph
+def make_full_page_lightcurve_plot(
     lc_data: tul.LCdata,
     bjd_original,
     flux_original,
     sector_count,
-    figsize=(48, 30),
     point_size=16,
+    figsize=(48, 30),
     font_size=32,
 ):
     fig = plt.figure(figsize=figsize, layout="tight")
@@ -441,7 +473,7 @@ def make_full_page_bjd_plot(
 
     plt.rcParams.update({"font.size": font_size})
 
-    gen_bjd_graph(
+    gen_lightcurve_graph(
         subplot,
         bjd_original,
         flux_original,
@@ -470,6 +502,31 @@ def make_full_page_location_plot(
         subplots[1],
         log_file,
         lc_data.crowdsap,
+    )
+
+    return fig
+
+
+# This function makes a full-page binned lightcurve graph
+def make_full_page_binned_lightcurve_plot(
+    lc_data: tul.LCdata,
+    sector_count,
+    time_bin_size=0.021,
+    point_size=16,
+    figsize=(48, 30),
+    font_size=32,
+):
+    fig = plt.figure(figsize=figsize, layout="tight")
+    subplot = fig.add_subplot()
+
+    plt.rcParams.update({"font.size": font_size})
+
+    gen_binned_lightcurve_graph(
+        subplot,
+        lc_data,
+        sector_count,
+        time_bin_size,
+        point_size,
     )
 
     return fig
@@ -554,15 +611,16 @@ for arg in sys.argv:
               python3 TESS-LS.py [TIC #]... -a 000
 
             -d
-              Create detailed versions of the graphs. These are good for zooming in
-              to get better resolution views of the data in case it is not clear if
-              an outburst is spotted.
+              Create detailed versions of the lightcurve graph. These are good for 
+              zooming in to get better resolution views of the data in case it is 
+              not clear if an outburst is spotted.
 
             -g
-              Skip creating the general information plot. This makes the script run 
-              much faster, however since some of the information normally required 
-              in creating the general information plot is not calculated, the logs 
-              will be sparser when running with this option.
+              Skip creating the general information plot, and instead create a 
+              full-page HR diagram to retain a location reference. This makes the 
+              script run much faster, however since some of the information normally 
+              required in creating the general information plot is not calculated, 
+              the logs will be sparser when running with this option.
 """
         )
 
@@ -764,33 +822,39 @@ for TIC in TIC_list:
         )
         location_plot.savefig(results_dir + "TIC%09d_pixel_count_graph_and_hr_diagram.png" % (TIC))
 
-    # Make a bigger version of the slow BJD graph
-    slow_full_plot = make_full_page_bjd_plot(
+    # Make a bigger version of the slow lightcurve graph
+    slow_full_plot = make_full_page_lightcurve_plot(
         slow_lc, BJD_or, flux_or, sector_count_slow
     )
-    slow_full_plot.savefig(results_dir + "TIC%09d_full.png" % (TIC))
+    slow_full_plot.savefig(results_dir + "TIC%09d_lightcurve.png" % (TIC))
 
-    # Make an expanded version of the slow BJD graph
-    slow_expanded_plot = make_full_page_bjd_plot(
-        slow_lc, BJD_or, flux_or, sector_count_slow, (120, 30)
+    # Make full-size slow binned lightcurve graph
+    slow_full_binned_plot = make_full_page_binned_lightcurve_plot(
+        slow_lc, sector_count_slow
     )
-    slow_expanded_plot.savefig(results_dir + "TIC%09d_expanded.png" % (TIC))
+    slow_full_binned_plot.savefig(results_dir + "TIC%09d_binned_lightcurve.png" % (TIC))
+
+    # Make an expanded version of the slow lightcurve graph
+    slow_expanded_plot = make_full_page_lightcurve_plot(
+        slow_lc, BJD_or, flux_or, sector_count_slow, figsize=(120, 30)
+    )
+    slow_expanded_plot.savefig(results_dir + "TIC%09d_expanded_lightcurve.png" % (TIC))
 
     if create_detailed_graphs:
-        # Make an expanded and detailed version of the slow BJD graph
-        slow_expanded_detailed_plot = make_full_page_bjd_plot(
-            slow_lc, BJD_or, flux_or, sector_count_slow, (120, 30), 2
+        # Make an expanded and detailed version of the slow lightcurve graph
+        slow_expanded_detailed_plot = make_full_page_lightcurve_plot(
+            slow_lc, BJD_or, flux_or, sector_count_slow, point_size=2, figsize=(120, 30)
         )
         slow_expanded_detailed_plot.savefig(
-            results_dir + "TIC%09d_expanded_detailed.png" % (TIC)
+            results_dir + "TIC%09d_expanded_detailed_lightcurve.png" % (TIC)
         )
 
-        # Make an extremely expanded and detailed version of the slow BJD graph
-        slow_expanded_detailed_plot = make_full_page_bjd_plot(
-            slow_lc, BJD_or, flux_or, sector_count_slow, (240, 30), 2
+        # Make an extremely expanded and detailed version of the slow lightcurve graph
+        slow_expanded_detailed_plot = make_full_page_lightcurve_plot(
+            slow_lc, BJD_or, flux_or, sector_count_slow, point_size=2, figsize=(240, 30)
         )
         slow_expanded_detailed_plot.savefig(
-            results_dir + "TIC%09d_extremely_expanded_detailed.png" % (TIC)
+            results_dir + "TIC%09d_extremely_expanded_detailed_lightcurve.png" % (TIC)
         )
 
     # Close log file
@@ -845,33 +909,39 @@ for TIC in TIC_list:
             )
             general_information_plot_fast.savefig(results_dir + "TIC%09d_fast.png" % (TIC))
 
-        # Make a bigger version of the fast BJD graph
-        fast_full_plot = make_full_page_bjd_plot(
+        # Make a bigger version of the fast lightcurve graph
+        fast_full_plot = make_full_page_lightcurve_plot(
             fast_lc, BJD_or, flux_or, sector_count_fast
         )
-        fast_full_plot.savefig(results_dir + "TIC%09d_fast_full.png" % (TIC))
+        fast_full_plot.savefig(results_dir + "TIC%09d_fast_lightcurve.png" % (TIC))
 
-        # Make an expanded version of the fast BJD graph
-        fast_expanded_plot = make_full_page_bjd_plot(
-            fast_lc, BJD_or, flux_or, sector_count_fast, (120, 30)
+        # Make full-size fast binned lightcurve graph
+        fast_full_binned_plot = make_full_page_binned_lightcurve_plot(
+            fast_lc, sector_count_fast
         )
-        fast_expanded_plot.savefig(results_dir + "TIC%09d_fast_expanded.png" % (TIC))
+        fast_full_binned_plot.savefig(results_dir + "TIC%09d_fast_binned_lightcurve.png" % (TIC))
+
+        # Make an expanded version of the fast lightcurve graph
+        fast_expanded_plot = make_full_page_lightcurve_plot(
+            fast_lc, BJD_or, flux_or, sector_count_fast, figsize=(120, 30)
+        )
+        fast_expanded_plot.savefig(results_dir + "TIC%09d_fast_expanded_lightcurve.png" % (TIC))
 
         if create_detailed_graphs:
-            # Make an expanded and detailed version of the fast BJD graph
-            fast_expanded_detailed_plot = make_full_page_bjd_plot(
-                fast_lc, BJD_or, flux_or, sector_count_fast, (120, 30), 2
+            # Make an expanded and detailed version of the fast lightcurve graph
+            fast_expanded_detailed_plot = make_full_page_lightcurve_plot(
+                fast_lc, BJD_or, flux_or, sector_count_fast, point_size=2, figsize=(120, 30)
             )
             fast_expanded_detailed_plot.savefig(
-                results_dir + "TIC%09d_fast_expanded_detailed.png" % (TIC)
+                results_dir + "TIC%09d_fast_expanded_detailed_lightcurve.png" % (TIC)
             )
 
-            # Make an extremely expanded and detailed version of the fast BJD graph
-            fast_expanded_detailed_plot = make_full_page_bjd_plot(
-                fast_lc, BJD_or, flux_or, sector_count_fast, (240, 30), 2
+            # Make an extremely expanded and detailed version of the fast lightcurve graph
+            fast_expanded_detailed_plot = make_full_page_lightcurve_plot(
+                fast_lc, BJD_or, flux_or, sector_count_fast, point_size=2, figsize=(240, 30)
             )
             fast_expanded_detailed_plot.savefig(
-                results_dir + "TIC%09d_fast_extremely_expanded_detailed.png" % (TIC)
+                results_dir + "TIC%09d_fast_extremely_expanded_detailed_lightcurve.png" % (TIC)
             )
 
         # Close log file
