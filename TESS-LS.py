@@ -96,7 +96,10 @@ def gen_pixel_count_graph_and_gaia_hr_diagram(
         idx, sep, _ = coord.match_to_catalog_sky(c2000)
 
         # All objects
-        id_all = gaia["SOURCE_ID"]
+        try:
+            id_all = gaia["source_id"]
+        except:
+            id_all = gaia["SOURCE_ID"]
         plx_all = np.array(gaia["parallax"])
         g_all = np.array(gaia["phot_g_mean_mag"])
         MG_all = 5 + 5 * np.log10(plx_all / 1000) + g_all
@@ -109,7 +112,10 @@ def gen_pixel_count_graph_and_gaia_hr_diagram(
 
         # The best match object
         best = gaia[idx]
-        gaia_id = best["SOURCE_ID"]
+        try:
+            gaia_id = best["source_id"]
+        except:
+            gaia_id = best["SOURCE_ID"]
 
         MG = 5 + 5 * np.log10(best["parallax"] / 1000) + best["phot_g_mean_mag"]
         bprp = best["bp_rp"]
@@ -365,7 +371,7 @@ def gen_binned_lightcurve_graph(
     # Generating lightcurve graph
     print("Generating binned lightcurve graph")
 
-    binned_graph.set_title("%d sector/s binned with time_bin_size %f" %(sector_count, time_bin_size))
+    binned_graph.set_title("%d sector/s binned with time_bin_size %.3f days" %(sector_count, time_bin_size))
     binned_graph.set_xlabel("BJD - 2457000")
     binned_graph.set_ylabel("Relative flux")
     binned_graph.set_xlim(np.min(binned_lightcurve_clean.time.value), np.max(binned_lightcurve_clean.time.value))
