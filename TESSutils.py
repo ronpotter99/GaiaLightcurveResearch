@@ -11,10 +11,10 @@ class LCdata:
         # exposure_time in seconds
         self.exposure_time = exposure_time
 
-        self.bjd = []
+        self.bjd = np.array([])
         self.t = []
-        self.flux = []
-        self.flux_err = []
+        self.flux = np.array([])
+        self.flux_err = np.array([])
         self.crowdsap = []
 
         self.freq = []
@@ -35,7 +35,8 @@ class LCdata:
         print("Reading data for %d sectors"%(len(list)))
         
         # Open data for the first sector
-        with fits.open(list[0]) as TESSdata:
+        TESSdata = fits.open(list[0])
+        try:
             data=TESSdata[1].data
             BJD = np.array(data['TIME'])
             flux = np.array(data['PDCSAP_FLUX'])
@@ -48,7 +49,8 @@ class LCdata:
             # If there are more sectors, open data for the remaning sectors
             if (len(list) > 1):
                 for i in range(1,len(list)):
-                    with fits.open(list[i]) as TESSdata:
+                    TESSdata = fits.open(list[i])
+                    try:
                         data=TESSdata[1].data
                         BJD = np.append(BJD, np.array(data['TIME']))
                         f = np.array(data['PDCSAP_FLUX'])
@@ -57,6 +59,10 @@ class LCdata:
                         err_flux = np.append(err_flux, ef / np.nanmean(f))
                         header=TESSdata[1].header
                         crowdsap.append(header['CROWDSAP'])
+                    finally:
+                        TESSdata.close()
+        finally:
+            TESSdata.close()
 
         err_flux = err_flux / np.nanmean(flux)
         flux = flux / np.nanmean(flux)
